@@ -25,6 +25,7 @@ from util import adjust_learning_rate, accuracy, AverageMeter
 from eval.meta_eval import meta_test
 from eval.cls_eval import validate
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 def parse_option():
 
@@ -77,6 +78,9 @@ def parse_option():
 
     parser.add_argument('-t', '--trial', type=str, default='1', help='the experiment id')
 
+    # opt = parser.parse_args("""--model_path checkpoints --tb_path tb_results --data_root Dataset --save_freq 1 --learning_rate 0.1
+    #                            --model resnet50
+    #                         """.split())
     opt = parser.parse_args()
 
     if opt.dataset == 'CIFAR-FS' or opt.dataset == 'FC100':
@@ -128,7 +132,7 @@ def parse_option():
 def main():
 
     opt = parse_option()
-
+    print(opt)
     # dataloader
     train_partition = 'trainval' if opt.use_trainval else 'train'
     if opt.dataset == 'miniImageNet':

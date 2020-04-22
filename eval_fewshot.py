@@ -51,6 +51,9 @@ def parse_option():
     parser.add_argument('--test_batch_size', type=int, default=1, metavar='test_batch_size',
                         help='Size of test batch)')
 
+    # opt = parser.parse_args("""--data_root Dataset --model_path checkpoints/resnet12_miniImageNet_lr_0.05_decay_0.0005_trans_A_trial_1/ckpt_epoch_100.pth
+    #                            --n_shots 1 --n_aug_support_samples 1
+    #                         """.split())
     opt = parser.parse_args()
 
     if 'trainval' in opt.model_path:
@@ -71,7 +74,7 @@ def parse_option():
 def main():
 
     opt = parse_option()
-
+    print(opt)
     # test loader
     args = opt
 

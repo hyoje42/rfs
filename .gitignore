@@ -117,3 +117,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+Dataset
+checkpoints
+tb_results
+*.pyc
+.vscode

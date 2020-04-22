@@ -10,6 +10,7 @@ model_pool = [
     'resnet12',
     'seresnet12',
     'wrn_28_10',
+    'resnet50'
 ]
 
 model_dict = {
