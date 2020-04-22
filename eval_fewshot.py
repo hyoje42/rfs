@@ -18,6 +18,8 @@ from dataset.transform_cfg import transforms_test_options, transforms_list
 
 from eval.meta_eval import meta_test
 
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 def parse_option():
 
@@ -33,7 +35,7 @@ def parse_option():
     parser.add_argument('--transform', type=str, default='A', choices=transforms_list)
 
     # specify data_root
-    parser.add_argument('--data_root', type=str, default='', help='path to data root')
+    parser.add_argument('--data_root', type=str, default='Dataset', help='path to data root')
 
     # meta setting
     parser.add_argument('--n_test_runs', type=int, default=600, metavar='N',

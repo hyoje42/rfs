@@ -58,9 +58,9 @@ def parse_option():
     parser.add_argument('--cosine', action='store_true', help='using cosine annealing')
 
     # specify folder
-    parser.add_argument('--model_path', type=str, default='', help='path to save model')
-    parser.add_argument('--tb_path', type=str, default='', help='path to tensorboard')
-    parser.add_argument('--data_root', type=str, default='', help='path to data root')
+    parser.add_argument('--model_path', type=str, default='checkpoints', help='path to save model')
+    parser.add_argument('--tb_path', type=str, default='tb_results', help='path to tensorboard')
+    parser.add_argument('--data_root', type=str, default='Dataset', help='path to data root')
 
     # meta setting
     parser.add_argument('--n_test_runs', type=int, default=600, metavar='N',
@@ -78,10 +78,13 @@ def parse_option():
 
     parser.add_argument('-t', '--trial', type=str, default='1', help='the experiment id')
 
-    # opt = parser.parse_args("""--model_path checkpoints --tb_path tb_results --data_root Dataset --save_freq 1 --learning_rate 0.1
-    #                            --model resnet50
-    #                         """.split())
-    opt = parser.parse_args()
+    # gpu setting
+    parser.add_argument('-g', '--gpu', type=int, default=1, help='gpu number')
+
+    opt = parser.parse_args("""--model_path checkpoints --tb_path tb_results --data_root Dataset --save_freq 1 --learning_rate 0.1
+                               --model resnet50 --trial debug
+                            """.split())
+    # opt = parser.parse_args()
 
     if opt.dataset == 'CIFAR-FS' or opt.dataset == 'FC100':
         opt.transform = 'D'
