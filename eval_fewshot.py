@@ -70,13 +70,12 @@ def parse_option():
         opt.data_root = '{}/{}'.format(opt.data_root, opt.dataset)
     opt.data_aug = True
 
+    print(opt)
     return opt
 
 
 def main():
-
     opt = parse_option()
-    print(opt)
     # test loader
     args = opt
 

@@ -25,7 +25,8 @@ from util import adjust_learning_rate, accuracy, AverageMeter
 from eval.meta_eval import meta_test
 from eval.cls_eval import validate
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+# addition
+from datetime import datetime
 
 def parse_option():
 
@@ -36,7 +37,7 @@ def parse_option():
     parser.add_argument('--tb_freq', type=int, default=500, help='tb frequency')
     parser.add_argument('--save_freq', type=int, default=10, help='save frequency')
     parser.add_argument('--batch_size', type=int, default=64, help='batch_size')
-    parser.add_argument('--num_workers', type=int, default=8, help='num of workers to use')
+    parser.add_argument('--num_workers', type=int, default=-1, help='num of workers to use')
     parser.add_argument('--epochs', type=int, default=100, help='number of training epochs')
 
     # optimization
@@ -79,12 +80,15 @@ def parse_option():
     parser.add_argument('-t', '--trial', type=str, default='1', help='the experiment id')
 
     # gpu setting
-    parser.add_argument('-g', '--gpu', type=int, default=1, help='gpu number')
+    parser.add_argument('-g', '--use_gpu', type=str, default='1', metavar='N', help='Use specific gpu number. default=\'1\' ')
 
     opt = parser.parse_args("""--model_path checkpoints --tb_path tb_results --data_root Dataset --save_freq 1 --learning_rate 0.1
-                               --model resnet50 --trial debug
+                               --model resnet50 --trial debug --use_gpu 1
                             """.split())
     # opt = parser.parse_args()
+
+    # gpu setting
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.use_gpu
 
     if opt.dataset == 'CIFAR-FS' or opt.dataset == 'FC100':
         opt.transform = 'D'
@@ -108,14 +112,16 @@ def parse_option():
     for it in iterations:
         opt.lr_decay_epochs.append(int(it))
 
-    opt.model_name = '{}_{}_lr_{}_decay_{}_trans_{}'.format(opt.model, opt.dataset, opt.learning_rate,
-                                                            opt.weight_decay, opt.transform)
+    opt.model_name = '{0.model}_{0.dataset}_lr_{0.learning_rate}_decay_{0.weight_decay}_trans_{0.transform}'.format(opt)
 
     if opt.cosine:
         opt.model_name = '{}_cosine'.format(opt.model_name)
 
     if opt.adam:
         opt.model_name = '{}_useAdam'.format(opt.model_name)
+
+    if opt.data_aug:
+        opt.model_name = '{}_dataAug'.format(opt.model_name)
 
     opt.model_name = '{}_trial_{}'.format(opt.model_name, opt.trial)
 
@@ -128,14 +134,19 @@ def parse_option():
         os.makedirs(opt.save_folder)
 
     opt.n_gpu = torch.cuda.device_count()
-
+    if opt.num_workers < 0:
+        opt.num_workers = opt.n_gpu * 2
+    opt.logfile = os.path.join(opt.save_folder, 'log.txt')
+    print(opt)
+    with open(opt.logfile, 'w') as f:
+        for key in opt.__dict__.keys():
+            print(f'{key} : {opt.__dict__[key]}', file=f)
+        print(f'Start time : {datetime.now():%Y-%m-%d} {datetime.now():%H:%M:%S}', file=f)
     return opt
 
 
 def main():
-
     opt = parse_option()
-    print(opt)
     # dataloader
     train_partition = 'trainval' if opt.use_trainval else 'train'
     if opt.dataset == 'miniImageNet':
@@ -284,6 +295,8 @@ def main():
     }
     save_file = os.path.join(opt.save_folder, '{}_last.pth'.format(opt.model))
     torch.save(state, save_file)
+    with open(opt.logfile, 'a') as f:
+        print(f'End time : {datetime.now():%Y-%m-%d} {datetime.now():%H:%M:%S}', file=f)
 
 
 def train(epoch, train_loader, model, criterion, optimizer, opt):
