@@ -82,10 +82,10 @@ def parse_option():
     # gpu setting
     parser.add_argument('-g', '--use_gpu', type=str, default='1', metavar='N', help='Use specific gpu number. default=\'1\' ')
 
-    opt = parser.parse_args("""--model_path checkpoints --tb_path tb_results --data_root Dataset --save_freq 1 --learning_rate 0.1
-                               --model resnet50 --trial debug --use_gpu 1
-                            """.split())
-    # opt = parser.parse_args()
+    # opt = parser.parse_args("""--model_path checkpoints --tb_path tb_results --data_root Dataset --save_freq 1 --learning_rate 0.1
+    #                            --model resnet50 --trial debug --use_gpu 1
+    #                         """.split())
+    opt = parser.parse_args()
 
     # gpu setting
     os.environ['CUDA_VISIBLE_DEVICES'] = opt.use_gpu
