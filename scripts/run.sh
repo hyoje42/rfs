@@ -17,3 +17,4 @@ python train_supervised.py --dataset miniImageNet --model resnet12 --learning_ra
 
 ## train for moco
 python train_moco.py --dataset miniImageNet --model resnet12 --learning_rate 0.03 --use_gpu 1 --dist-url 77 --lr_decay_epochs 60,80,120,160 --epochs 200 --mlp --moco-dim 128 --moco-k 65536 --lamda 0.5
+python train_moco.py --dataset miniImageNet --model resnet12 --learning_rate 0.03 --use_gpu 0 --dist-url 78 --lr_decay_epochs 60,80,120,160 --epochs 200 --mlp --moco-dim 128 --moco-k 16384 --lamda 0.5

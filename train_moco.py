@@ -108,12 +108,12 @@ def parse_option():
                              'Lambda*cls_loss + (1-Lambda)*contr_loss '
                              '(default: 0.5)')
 
-    opt = parser.parse_args("""--save_freq 1 --learning_rate 0.1
-                               --model resnet12 --trial debug --use_gpu 1 --dist-url 77 
-                               --lr_decay_epochs 60,80,120,160 --epochs 200
-                               --mlp --moco-dim 128 --moco-k 65536 --lamda 0.5
-                            """.split())
-    # opt = parser.parse_args()
+    # opt = parser.parse_args("""--save_freq 1 --learning_rate 0.1
+    #                            --model resnet12 --trial debug --use_gpu 1 --dist-url 77 
+    #                            --lr_decay_epochs 60,80,120,160 --epochs 200
+    #                            --mlp --moco-dim 128 --moco-k 65536 --lamda 0.5
+    #                         """.split())
+    opt = parser.parse_args()
 
     # gpu setting
     os.environ['CUDA_VISIBLE_DEVICES'] = opt.use_gpu
