@@ -13,4 +13,7 @@ python eval_fewshot.py --model_path /path/to/student.pth --data_root /path/to/da
 
 
 ## train
-python train_supervised.py --dataset miniImageNet --save_freq 1 --learning_rate 0.1 --model resnet12 --trial debug --use_gpu 1 --num_workers -1
+python train_supervised.py --dataset miniImageNet --model resnet12 --learning_rate 0.1  --trial debug --use_gpu 1 --num_workers -1
+
+## train for moco
+python train_moco.py --dataset miniImageNet --model resnet12 --learning_rate 0.03 --use_gpu 1 --dist-url 77 --lr_decay_epochs 60,80,120,160 --epochs 200 --mlp --moco-dim 128 --moco-k 65536 --lamda 0.5
