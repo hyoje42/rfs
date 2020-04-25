@@ -152,7 +152,7 @@ class MoCo(nn.Module):
 
         return x_gather[idx_this]
 
-    def forward(self, im_q, im_k=None, is_DeEnqueue=True):
+    def forward(self, im_q, im_k=None, is_DeEnqueue=True, is_feat=False):
         """
         Input:
             im_q: a batch of query images
@@ -160,6 +160,7 @@ class MoCo(nn.Module):
         Output:
             logits, targets
         """
+        assert (im_k is None) or ((im_k is not None) and (is_feat==False)), 'If you want to put multiple inputs, then you should not use is_feat'
         if im_k is not None:
             # compute query features
             q = self.encoder_q(im_q, is_moco=True)  # queries: NxC
@@ -202,7 +203,10 @@ class MoCo(nn.Module):
 
             return logits, labels
         else:
-            return self.encoder_q(im_q)
+            if is_feat:
+                return self.encoder_q(im_q, is_feat=is_feat)
+            else:
+                return self.encoder_q(im_q)
 
 # utils
 @torch.no_grad()

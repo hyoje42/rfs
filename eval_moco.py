@@ -19,6 +19,8 @@ from dataset.transform_cfg import transforms_test_options, transforms_list
 from eval.meta_eval import meta_test
 
 import os
+import re
+from models.moco_builder import MoCo, resnet12ForMoco
 
 def parse_option():
 
@@ -55,8 +57,8 @@ def parse_option():
     # gpu setting
     parser.add_argument('-g', '--use_gpu', type=str, default='1', metavar='N', help='Use specific gpu number. default=\'1\' ')
 
-    # opt = parser.parse_args("""--data_root Dataset --model_path checkpoints/resnet12_miniImageNet_lr_0.05_decay_0.0005_trans_A_dataAug_trial_1/ckpt_epoch_100.pth
-    #                            --n_shots 1 --n_aug_support_samples 1
+    # opt = parser.parse_args("""--data_root Dataset --model_path checkpoints/moco_resnet12_miniImageNet_lr_0.03_decay_0.0005_trans_A_dim128_K65536_lam0.5_mlp_dataAug_trial_1/ckpt_epoch_100.pth
+    #                            --n_shots 1 --n_aug_support_samples 1 --n_test_runs 10
     #                         """.split())
     opt = parser.parse_args()
 
@@ -150,9 +152,14 @@ def main():
                 raise NotImplementedError('dataset not supported: {}'.format(opt.dataset))
     else:
         raise NotImplementedError(opt.dataset)
+    
+    # find moco parameters
+    moco_dim = int(re.compile('dim\d+').search(opt.model_path).group()[3:])
+    moco_k = int(re.compile('K\d+').search(opt.model_path).group()[1:])
+    moco_mlp = bool(re.compile(r'mlp').search(opt.model_path))
 
     # load model
-    model = create_model(opt.model, n_cls, opt.dataset)
+    model = MoCo(resnet12ForMoco, n_cls, dim=moco_dim, K=moco_k, m=0.999, T=0.07, mlp=moco_mlp, lamda=0.5)
     ckpt = torch.load(opt.model_path)
     model.load_state_dict(ckpt['model'])
 
