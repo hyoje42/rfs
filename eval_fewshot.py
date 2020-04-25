@@ -19,7 +19,6 @@ from dataset.transform_cfg import transforms_test_options, transforms_list
 from eval.meta_eval import meta_test
 
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 def parse_option():
 
@@ -52,11 +51,17 @@ def parse_option():
                         help='Number of workers for dataloader')
     parser.add_argument('--test_batch_size', type=int, default=1, metavar='test_batch_size',
                         help='Size of test batch)')
+    
+    # gpu setting
+    parser.add_argument('-g', '--use_gpu', type=str, default='1', metavar='N', help='Use specific gpu number. default=\'1\' ')
 
-    # opt = parser.parse_args("""--data_root Dataset --model_path checkpoints/resnet12_miniImageNet_lr_0.05_decay_0.0005_trans_A_trial_1/ckpt_epoch_100.pth
-    #                            --n_shots 1 --n_aug_support_samples 1
+    # opt = parser.parse_args("""--data_root Dataset --model_path checkpoints/resnet12_miniImageNet_lr_0.05_decay_0.0005_trans_A_dataAug_trial_1/ckpt_epoch_100.pth
+    #                            --n_shots 1 --n_aug_support_samples 1 --n_test_runs 10
     #                         """.split())
     opt = parser.parse_args()
+
+    # gpu setting
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.use_gpu
 
     if 'trainval' in opt.model_path:
         opt.use_trainval = True
@@ -70,14 +75,19 @@ def parse_option():
         opt.data_root = '{}/{}'.format(opt.data_root, opt.dataset)
     opt.data_aug = True
 
+    opt.logfile = (os.path.dirname(opt.model_path) + '/' 
+                 + os.path.basename(opt.model_path).split('.')[0] 
+                 + f'_{opt.n_shots}shots_{opt.n_ways}ways_{opt.n_test_runs}iters_{opt.n_aug_support_samples}augSupport.txt')
     print(opt)
+    with open(opt.logfile, 'w') as f:
+        for key in opt.__dict__.keys():
+            print(f'{key} : {opt.__dict__[key]}', file=f)
     return opt
 
 
 def main():
     opt = parse_option()
     # test loader
-    args = opt
 
     if opt.dataset == 'miniImageNet':
         train_trans, test_trans = transforms_test_options[opt.transform]
@@ -151,26 +161,37 @@ def main():
         cudnn.benchmark = True
 
     # evalation
+    logs = []
+    
     start = time.time()
     val_acc, val_std = meta_test(model, meta_valloader)
     val_time = time.time() - start
-    print('val_acc: {:.4f}, val_std: {:.4f}, time: {:.1f}'.format(val_acc, val_std, val_time))
+    logs.append('val_acc: {:.4f}, val_std: {:.4f}, time: {:.1f}'.format(val_acc, val_std, val_time))
+    print(logs[-1])
 
     start = time.time()
     val_acc_feat, val_std_feat = meta_test(model, meta_valloader, use_logit=False)
     val_time = time.time() - start
-    print('val_acc_feat: {:.4f}, val_std: {:.4f}, time: {:.1f}'.format(val_acc_feat, val_std_feat, val_time))
+    logs.append('val_acc_feat: {:.4f}, val_std: {:.4f}, time: {:.1f}'.format(val_acc_feat, val_std_feat, val_time))
+    print(logs[-1])
 
     start = time.time()
     test_acc, test_std = meta_test(model, meta_testloader)
     test_time = time.time() - start
-    print('test_acc: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc, test_std, test_time))
+    logs.append('test_acc: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc, test_std, test_time))
+    print(logs[-1])
 
     start = time.time()
     test_acc_feat, test_std_feat = meta_test(model, meta_testloader, use_logit=False)
     test_time = time.time() - start
-    print('test_acc_feat: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc_feat, test_std_feat, test_time))
-
+    logs.append('test_acc_feat: {:.4f}, test_std: {:.4f}, time: {:.1f}'.format(test_acc_feat, test_std_feat, test_time))
+    print(logs[-1])
+    
+    # write log file
+    with open(opt.logfile, 'a') as f:
+        print('', file=f)
+        for msg in logs:
+            print(msg, file=f)
 
 if __name__ == '__main__':
     main()
