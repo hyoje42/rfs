@@ -1,0 +1,4 @@
+screen -d -m -S test1 bash -c 'source activate torch14 && python eval_fewshot.py --model_path checkpoints/resnet12_miniImageNet_lr_0.05_decay_0.0005_trans_A_dataAug_trial_1/ckpt_epoch_80.pth --n_shots 5 --n_aug_support_samples 1 -g 1' &
+screen -d -m -S test2 bash -c 'source activate torch14 && python eval_fewshot.py --model_path checkpoints/resnet12_miniImageNet_lr_0.05_decay_0.0005_trans_A_dataAug_trial_1/ckpt_epoch_80.pth --n_shots 1 --n_aug_support_samples 1 -g 1' &
+screen -d -m -S test3 bash -c 'source activate torch14 && python eval_fewshot.py --model_path checkpoints/resnet12_miniImageNet_lr_0.05_decay_0.0005_trans_A_dataAug_trial_1/ckpt_epoch_100.pth --n_shots 5 --n_aug_support_samples 1 -g 0' &
+screen -d -m -S test4 bash -c 'source activate torch14 && python eval_fewshot.py --model_path checkpoints/resnet12_miniImageNet_lr_0.05_decay_0.0005_trans_A_dataAug_trial_1/ckpt_epoch_100.pth --n_shots 1 --n_aug_support_samples 1 -g 0' &

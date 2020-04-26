@@ -289,6 +289,7 @@ def main():
         eta_min = opt.learning_rate * (opt.lr_decay_rate ** 3)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, opt.epochs, eta_min, -1)
 
+    best_acc = 0.0
     # routine: supervised pre-training
     for epoch in range(1, opt.epochs + 1):
 
@@ -318,8 +319,18 @@ def main():
             state = {
                 'epoch': epoch,
                 'model': model.state_dict() if opt.n_gpu <= 1 else model.module.state_dict(),
+                'optimizer': optimizer.state_dict()
             }
-            save_file = os.path.join(opt.save_folder, 'ckpt_epoch_{epoch}.pth'.format(epoch=epoch))
+            save_file = os.path.join(opt.save_folder, f'ckpt_epoch_{epoch}.pth')
+            torch.save(state, save_file)
+        if best_acc < val_log[0]:
+            print('==> Best Saving...')
+            state = {
+                'epoch': epoch,
+                'model': model.state_dict() if opt.n_gpu <= 1 else model.module.state_dict(),
+                'optimizer': optimizer.state_dict()
+            }
+            save_file = os.path.join(opt.save_folder, f'ckpt_best.pth')
             torch.save(state, save_file)
 
     # save the last model
