@@ -123,3 +123,4 @@ checkpoints
 tb_results
 *.pyc
 .vscode
+*.sh

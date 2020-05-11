@@ -324,6 +324,7 @@ def main():
             save_file = os.path.join(opt.save_folder, f'ckpt_epoch_{epoch}.pth')
             torch.save(state, save_file)
         if best_acc < val_log[0]:
+            best_acc = val_log[0]
             print('==> Best Saving...')
             state = {
                 'epoch': epoch,
