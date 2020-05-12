@@ -1,3 +1,7 @@
+"""
+Realistic Setting for Few-shot Classification
+"""
+
 from __future__ import print_function
 
 import os
@@ -81,7 +85,10 @@ def parse_option():
     parser.add_argument('-t', '--trial', type=str, default='1', help='the experiment id')
 
     # gpu setting
-    parser.add_argument('-g', '--use_gpu', type=str, default='1', metavar='N', help='Use specific gpu number. default=\'1\' ')
+    parser.add_argument('-g', '--gpu_id', type=str, default='1', metavar='N', help='Use specific gpu number. default=\'1\' ')
+
+    # realistic seeting
+    parser.add_argument('--realistic_prob', type=float, default=0.0, help='The probability of sampling for realistic setting (default : 0.0)')
     
     ### moco setting
     # moco specific configs:
@@ -109,14 +116,14 @@ def parse_option():
                              '(default: 0.5)')
 
     # opt = parser.parse_args("""--save_freq 1 --learning_rate 0.1
-    #                            --model resnet12 --trial debug --use_gpu 1 --dist-url 77 
+    #                            --model resnet12 --trial debug --gpu_id 1 --dist-url 123 
     #                            --lr_decay_epochs 60,80,120,160 --epochs 200
-    #                            --mlp --moco-dim 128 --moco-k 65536 --lamda 0.5
+    #                            --mlp --moco-dim 128 --moco-k 128 --lamda 0.5 --realistic_prob 0.1
     #                         """.split())
     opt = parser.parse_args()
 
     # gpu setting
-    os.environ['CUDA_VISIBLE_DEVICES'] = opt.use_gpu
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpu_id
 
     if opt.dataset == 'CIFAR-FS' or opt.dataset == 'FC100':
         opt.transform = 'D'
@@ -140,8 +147,11 @@ def parse_option():
     for it in iterations:
         opt.lr_decay_epochs.append(int(it))
 
-    opt.model_name = ('moco_{0.model}_{0.dataset}_lr_{0.learning_rate}_decay_{0.weight_decay}_trans_{0.transform}'.format(opt) + 
-                     '_dim{0.moco_dim}_K{0.moco_k}_lam{0.lamda}'.format(opt))
+    opt.model_name = 'moco_{0.model}_{0.dataset}_lr_{0.learning_rate}_decay_{0.weight_decay}_trans_{0.transform}' \
+                     '_dim{0.moco_dim}_K{0.moco_k}_lam{0.lamda}'.format(opt)
+
+    if opt.realistic_prob:
+        opt.model_name = 'Realistic_Prob{0.realistic_prob}_{0.model_name}'.format(opt)
     if opt.mlp:
         opt.model_name = '{}_mlp'.format(opt.model_name)
     if opt.cosine:
@@ -174,11 +184,16 @@ def parse_option():
 
 def main():
     opt = parse_option()
+    if opt.realistic_prob:
+        print('##############################################')
+        print('Realistic Setting')
+        print('##############################################')
     # dataloader
     train_partition = 'trainval' if opt.use_trainval else 'train'
     if opt.dataset == 'miniImageNet':
         train_trans, test_trans = transforms_options[opt.transform]
-        train_loader = DataLoader(ImageNet(args=opt, partition=train_partition, transform=train_trans, is_moco=True),
+        train_loader = DataLoader(ImageNet(args=opt, partition=train_partition, transform=train_trans, 
+                                           is_moco=True, is_realistic=opt.realistic_prob),
                                   batch_size=opt.batch_size, shuffle=True, drop_last=True,
                                   num_workers=opt.num_workers)
         val_loader = DataLoader(ImageNet(args=opt, partition='val', transform=test_trans, is_moco=True),
@@ -338,6 +353,7 @@ def main():
     state = {
         'opt': opt,
         'model': model.state_dict() if opt.n_gpu <= 1 else model.module.state_dict(),
+        'optimizer': optimizer.state_dict(),
     }
     save_file = os.path.join(opt.save_folder, '{}_last.pth'.format(opt.model))
     torch.save(state, save_file)

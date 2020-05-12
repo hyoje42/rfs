@@ -25,7 +25,7 @@ from dataset.tiered_imagenet import TieredImageNet, MetaTieredImageNet
 from dataset.cifar import CIFAR100, MetaCIFAR100
 from dataset.transform_cfg import transforms_options, transforms_list
 
-from util import adjust_learning_rate, accuracy, AverageMeter
+from util import adjust_learning_rate, accuracy, AverageMeter, ProgressMeter
 from eval.meta_eval import meta_test
 from eval.cls_eval import validate
 
@@ -90,7 +90,7 @@ def parse_option():
     parser.add_argument('--realistic_prob', type=float, default=0.0, help='The probability of sampling for realistic setting (default : 0.0)')
 
     # opt = parser.parse_args("""--model_path checkpoints --tb_path tb_results --data_root Dataset --save_freq 1 --learning_rate 0.1
-    #                            --model resnet50 --trial debug --gpu_id 1
+    #                            --model convnet4 --trial debug --gpu_id 1 --realistic_prob 0.1
     #                         """.split())
     ### jupyter
     # opt, _ = parser.parse_known_args("""--model_path checkpoints --tb_path tb_results --data_root Dataset --save_freq 1 --learning_rate 0.1
@@ -122,8 +122,11 @@ def parse_option():
     opt.lr_decay_epochs = list([])
     for it in iterations:
         opt.lr_decay_epochs.append(int(it))
-
-    opt.model_name = 'Realistic_Prob{0.realistic_prob}_{0.model}_{0.dataset}_lr_{0.learning_rate}_decay_{0.weight_decay}_trans_{0.transform}'.format(opt)
+    
+    opt.model_name = '{0.model}_{0.dataset}_lr_{0.learning_rate}_decay_{0.weight_decay}_trans_{0.transform}'.format(opt)
+    
+    if opt.realistic_prob:
+        opt.model_name = 'Realistic_Prob{0.realistic_prob}_{0.model_name}'.format(opt)
 
     if opt.cosine:
         opt.model_name = '{}_cosine'.format(opt.model_name)
@@ -157,10 +160,11 @@ def parse_option():
 
 
 def main():
-    print('##############################################')
-    print('Realistic Setting')
-    print('##############################################')
     opt = parse_option()
+    if opt.realistic_prob:
+        print('##############################################')
+        print('Realistic Setting')
+        print('##############################################')
     # dataloader
     train_partition = 'trainval' if opt.use_trainval else 'train'
     if opt.dataset == 'miniImageNet':
@@ -279,18 +283,17 @@ def main():
         print("==> training...")
 
         time1 = time.time()
-        train_acc, train_loss = train(epoch, train_loader, model, criterion, optimizer, opt)
+        train_log = train(epoch, train_loader, model, criterion, optimizer, opt)
         time2 = time.time()
         print('epoch {}, total time {:.2f}'.format(epoch, time2 - time1))
 
-        logger.log_value('train_acc', train_acc, epoch)
-        logger.log_value('train_loss', train_loss, epoch)
+        for i, name in enumerate(['train_acc', 'train_loss']):
+            logger.log_value(name, train_log[i], epoch)
 
-        test_acc, test_acc_top5, test_loss = validate(val_loader, model, criterion, opt)
+        val_log = validate(val_loader, model, criterion, opt)
 
-        logger.log_value('test_acc', test_acc, epoch)
-        logger.log_value('test_acc_top5', test_acc_top5, epoch)
-        logger.log_value('test_loss', test_loss, epoch)
+        for i, name in enumerate(['test_acc', 'test_acc_top5', 'test_loss']):
+            logger.log_value(name, val_log[i], epoch)
 
         # regular saving
         if epoch % opt.save_freq == 0:
@@ -298,8 +301,9 @@ def main():
             state = {
                 'epoch': epoch,
                 'model': model.state_dict() if opt.n_gpu <= 1 else model.module.state_dict(),
+                'optimizer': optimizer.state_dict()
             }
-            save_file = os.path.join(opt.save_folder, 'ckpt_epoch_{epoch}.pth'.format(epoch=epoch))
+            save_file = os.path.join(opt.save_folder, f'ckpt_epoch_{epoch}.pth')
             torch.save(state, save_file)
 
     # save the last model
@@ -318,11 +322,15 @@ def train(epoch, train_loader, model, criterion, optimizer, opt):
     """One epoch training"""
     model.train()
 
-    batch_time = AverageMeter()
-    data_time = AverageMeter()
-    losses = AverageMeter()
-    top1 = AverageMeter()
-    top5 = AverageMeter()
+    batch_time = AverageMeter('Time', ':.3f')
+    data_time = AverageMeter('Data', ':.3f')
+    losses = AverageMeter('Loss', ':.4f')
+    top1 = AverageMeter('Acc@1', ':.3f')
+    top5 = AverageMeter('Acc@5', ':.3f')
+
+    progress = ProgressMeter(len(train_loader),
+                             [batch_time, data_time, losses, top1, top5],
+                             prefix=f'Epoch: [{epoch}]')
 
     end = time.time()
     for idx, (input, target, _) in enumerate(train_loader):
@@ -356,19 +364,10 @@ def train(epoch, train_loader, model, criterion, optimizer, opt):
 
         # print info
         if idx % opt.print_freq == 0:
-            print('Epoch: [{0}][{1}/{2}]\t'
-                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
-                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
-                  'Acc@1 {top1.val:.3f} ({top1.avg:.3f})\t'
-                  'Acc@5 {top5.val:.3f} ({top5.avg:.3f})'.format(
-                   epoch, idx, len(train_loader), batch_time=batch_time,
-                   data_time=data_time, loss=losses, top1=top1, top5=top5))
-            sys.stdout.flush()
+            msg = progress.display(idx)
 
-    print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
-          .format(top1=top1, top5=top5))
-
+    print(f' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}')
+    
     return top1.avg, losses.avg
 
 
