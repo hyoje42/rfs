@@ -76,7 +76,7 @@ def parse_option():
                         help='Number of shots in test')
     parser.add_argument('--n_queries', type=int, default=15, metavar='N',
                         help='Number of query in test')
-    parser.add_argument('--n_aug_support_samples', default=5, type=int,
+    parser.add_argument('--n_aug_support_samples', default=1, type=int,
                         help='The number of augmented samples for each meta test sample')
     parser.add_argument('--test_batch_size', type=int, default=1, metavar='test_batch_size',
                         help='Size of test batch)')
@@ -162,14 +162,14 @@ def parse_option():
 def main():
     opt = parse_option()
     if opt.realistic_prob:
-        print('##############################################')
-        print('Realistic Setting')
-        print('##############################################')
+        print('#'*100)
+        print('{:#^100}'.format(' Realistic Setting '))
+        print('#'*100)
     # dataloader
     train_partition = 'trainval' if opt.use_trainval else 'train'
     if opt.dataset == 'miniImageNet':
         train_trans, test_trans = transforms_options[opt.transform]
-        train_loader = DataLoader(ImageNet(args=opt, partition=train_partition, transform=train_trans, is_realistic=opt.realistic_prob),
+        train_loader = DataLoader(ImageNet(args=opt, partition=train_partition, transform=train_trans, realistic_prob=opt.realistic_prob),
                                   batch_size=opt.batch_size, shuffle=True, drop_last=True,
                                   num_workers=opt.num_workers)
         val_loader = DataLoader(ImageNet(args=opt, partition='val', transform=test_trans),

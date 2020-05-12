@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-
+import time
 
 class LabelSmoothing(nn.Module):
     """
@@ -104,3 +104,17 @@ def accuracy(output, target, topk=(1,)):
             correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
+
+def realistic_setting(realistic_prob, imgs, labels):
+    print('Data sampling for realistic setting')
+    print(f'The prob of sampling : {realistic_prob}')
+    np.random.seed(777)
+    rand_idxs = np.random.permutation(len(labels))
+    num_sample = int(len(labels)*realistic_prob)
+    imgs = imgs[rand_idxs][:num_sample]
+    labels = np.array(labels)[rand_idxs][:num_sample]
+    labels = list(labels)
+    print(f'The number of imgs and labels : {len(imgs)} {len(labels)}')
+    np.random.seed(int(time.time()))
+
+    return imgs, labels
