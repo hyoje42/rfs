@@ -5,11 +5,12 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
+import time
 
 
 class ImageNet(Dataset):
     def __init__(self, args, partition='train', pretrain=True, is_sample=False, k=4096,
-                 transform=None, is_moco=False):
+                 transform=None, is_moco=False, is_realistic=0.0):
         super(Dataset, self).__init__()
         self.data_root = args.data_root
         self.partition = partition
@@ -19,6 +20,7 @@ class ImageNet(Dataset):
         self.normalize = transforms.Normalize(mean=self.mean, std=self.std)
         self.pretrain = pretrain
         self.is_moco = is_moco
+        self.is_realistic = is_realistic
 
         if transform is None:
             if self.partition == 'train' and self.data_aug:
@@ -62,6 +64,17 @@ class ImageNet(Dataset):
             data = pickle.load(f, encoding='latin1')
             self.imgs = data['data']
             self.labels = data['labels']
+        if is_realistic:
+            print('Data sampling for realistic setting')
+            print(f'The prob of sampling : {is_realistic}')
+            np.random.seed(777)
+            rand_idxs = np.random.permutation(len(self.labels))
+            num_sample = int(len(self.labels)*is_realistic)
+            self.imgs = self.imgs[rand_idxs][:num_sample]
+            self.labels = np.array(self.labels)[rand_idxs][:num_sample]
+            self.labels = list(self.labels)
+            print(f'The number of imgs and labels : {len(self.imgs)} {len(self.labels)}')
+            np.random.seed(int(time.time()))
 
         # pre-process for contrastive sampling
         self.k = k
